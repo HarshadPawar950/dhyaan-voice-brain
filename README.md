@@ -46,11 +46,9 @@ Python, FastAPI, Uvicorn, PostgreSQL (psycopg2), pandas, phonenumbers, Bolna voi
 python -m venv .venv && .venv\Scripts\activate
 pip install -r requirements.txt
 copy .env.example .env      # then fill in your own keys
-   python -m venv .venv && .venv\Scripts\activate
-   pip install -r requirements.txt
-   copy .env.example .env      # then fill in your own keys
-   psql -U postgres -d your_db_name -f ledger/schema.sql
+psql -U postgres -d your_db_name -f schema.sql
 ```
+
 The repo contains no credentials, call logs or lead data. See `.env.example` for the variables needed.
 
 ## How it was built
