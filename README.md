@@ -1,62 +1,53 @@
-# DHYAAN VOICE BRAIN
+# Dhyaan Voice Brain
 
-Standalone AI cold-calling **verification** system for Dhyaan Enterprises.
-Sits NEXT TO the Command Center — never inside it. The portal stays frozen-safe.
+An AI outbound-calling pipeline that verifies real estate leads at scale. Built during my internship at Dhyaan Enterprises, Vashi (Navi Mumbai), as a standalone system that sits next to the Dhyaan Command Center ERP/CRM.
 
-> Compliance footing: outbound to **consented Meta/form leads only**, registered
-> under Inovant Solutions for Websites Pvt Ltd. Honour DNC immediately. Calling
-> hours only. This is NOT cold-blasting — it is verification of warm leads.
+## What it does
+Sales staff upload a lead file (up to ~500 numbers). The system cleans it, filters out opted-out numbers, dials the leads in paced batches through the Bolna voice-AI platform, captures each call result by webhook, scores how interested each lead is, and hands qualified leads to the sales team.
 
-## The machine (6 modules)
+## The funnel
 ```
-INTAKE → BRAIN → DIALER → [Bolna places call] → CATCHER → LEDGER → DASHBOARD
+WhatsApp message to all leads (AiSensy)
+  -> Lead replies      -> goes straight to a human caller
+  -> Lead stays silent -> AI voice agent calls to qualify
+        -> Interested     -> verified lead, handed to a human
+        -> Not interested -> archived / added to Do-Not-Call
 ```
-| Module    | Job                                                        | Status |
-|-----------|------------------------------------------------------------|--------|
-| brain/    | The one mind: prompt spec + extraction schema              | ✅ v1  |
-| ledger/   | Own Postgres schema `voicebrain` (campaigns/leads/results) | ✅ v1  |
-| catcher/  | FastAPI webhook receiver → parses Bolna → Ledger           | ✅ v1  |
-| intake/   | CSV clean → dedupe → E.164 validate → consent filter       | ⬜ next |
-| dialer/   | Wrapper over Bolna /call and /batches + retry windows      | ⬜      |
-| dashboard/| See campaigns, outcomes, verified leads, promote button    | ⬜      |
+The AI only calls the leads a human would otherwise never have reached, which protects sales-team time.
 
-## Bolna API facts (confirmed)
-- Trigger one: `POST https://api.bolna.ai/call`  {agent_id, recipient_phone_number}
-- Batch: `POST https://api.bolna.ai/batches` (CSV; phone col header = `contact_number`, E.164)
-- Webhook delivers: call status, transcript, **extracted_data**, cost
-- Fallback: List Batch Executions API (poll if webhook missed)
-- Native Auto-Retry exists — lean on it instead of rebuilding.
-- Webhook needs a PUBLIC url → use cloudflared/ngrok in test, small host in prod.
+## Pipeline
+| Module | Role |
+|---|---|
+| `intake/` | Cleans uploaded leads: dedupe, E.164 phone validation, Do-Not-Call filter |
+| `brain/` | The voice agent's conversation design and system prompts |
+| `dialer/` | Places calls through the Bolna API in paced chunks, with retry handling |
+| `aisensy/` | WhatsApp outreach through the AiSensy API |
+| `catcher/` | FastAPI webhook receiver for call results (transcript, extracted data, cost) |
+| `dashboard/` | Live run dashboard: connected vs not connected, spend, verified leads, retry queue, CSV export |
+| `tools/` | Maintenance scripts: webhook replay, re-scoring, audit checks |
 
-## Setup (first run)
-```bash
-cd dhyaan-voice-brain
-python -m venv .venv && .venv\Scripts\activate      # Windows
+## Lead scoring (3 layers)
+1. **Call quality:** was the call usable (good / partial / junk)?
+2. **Heat score:** a rules-based function reads the extracted budget, location and possession timeline and classifies intent as hot, warm or cold (`intake/heat_score.py`).
+3. **Manual rating:** sales staff can override with a 1-5 star rating from the dashboard.
+
+A lead counts as **verified** only when interest is explicitly stated *and* at least one concrete requirement is captured. An explicit "no" always wins (`intake/verify.py`). The scoring logic is written as pure functions, so it can be tested without a database or live calls.
+
+## Design decisions
+- **Isolated by design:** it reads and writes only its own `voicebrain` schema and never touches the production CRM database. Moving leads into the CRM is a manual, reviewed step.
+- **Consent and compliance first:** it calls only leads who already enquired, keeps a Do-Not-Call list, and dials within set calling hours.
+- **Paced dialing:** calls go out in chunks with delays so carriers do not flag the traffic as spam. Runs can pause and resume.
+
+## Tech stack
+Python, FastAPI, Uvicorn, PostgreSQL (psycopg2), pandas, phonenumbers, Bolna voice-AI API, AiSensy WhatsApp API, cloudflared/ngrok tunnels for webhooks.
+
+## Setup
+```
+python -m venv .venv && .venv\Scripts\activate
 pip install -r requirements.txt
-copy .env.example .env                                # then fill in real values
-psql -U postgres -d realestate_db -f ledger/schema.sql
+copy .env.example .env      # then fill in your own keys
 ```
+The repo contains no credentials, call logs or lead data. See `.env.example` for the variables needed.
 
-## Test the Catcher with ONE real call (do this first)
-```bash
-uvicorn catcher.server:app --host 0.0.0.0 --port 5005
-cloudflared tunnel --url http://localhost:5005        # gives a public https URL
-# paste <public-url>/webhook/bolna into Bolna agent's Webhook URL field
-# make one call from Bolna playground → watch logs/raw_webhooks.jsonl fill
-```
-Once you see a real payload, open `catcher/server.py` → `parse_bolna()` and
-confirm the key names match (extracted_data, transcript, duration, cost).
-Tighten them, then results flow into `voicebrain.call_results`.
-
-## Conventions (carried from Command Center)
-- Backup before edits (`*.bak_[tag]`), evidence over "it works", one goal per session.
-- Soft-delete via `deleted_at`. Secrets in `.env` only — never committed.
-- Promotion into the Command Center portal is a MANUAL, reviewed step. Never auto-write
-  into `realestate_db.private` from here.
-
-## Build order
-1. ✅ Brain + Ledger + Catcher (this session)
-2. ⬜ Test Catcher with one real call; lock the payload keys
-3. ⬜ Intake (CSV → call-ready batch)
-4. ⬜ Dialer (trigger batches via Bolna)
-5. ⬜ Dashboard (see + promote)
+## How it was built
+I designed the architecture, the funnel, the scoring rules and the compliance approach, and directed Claude Code as the implementation partner across the build sessions (see `CLAUDE.md`). I also tested and iterated on the result.
