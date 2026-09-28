@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batch History — Dhyaan Voice Brain</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        /* Same design tokens as the main dashboard (navy #0A1628 / gold #D4AF37). */
+        :root {
+            --color-bg-canvas: #0A1628;
+            --color-bg-glow: #13243f;
+            --color-accent-gold: #D4AF37;
+            --color-accent-blue: #378ADD;
+            --color-accent-mint: #5DCAA5;
+            --color-accent-amber: #EF9F27;
+            --color-text-main: #E2E8F0;
+            --color-text-muted: #6B7D99;
+            --color-card-bg: rgba(255, 255, 255, 0.03);
+            --color-card-border: rgba(255, 255, 255, 0.08);
+            --color-card-highlight: rgba(255, 255, 255, 0.15);
+            --font-display: 'Playfair Display', Georgia, serif;
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--color-bg-canvas);
+            background-image: radial-gradient(circle at 10% 10%, var(--color-bg-glow) 0%, var(--color-bg-canvas) 70%);
+            background-attachment: fixed;
+            color: var(--color-text-main);
+            font-family: var(--font-sans);
+            font-size: 14px; line-height: 1.6; min-height: 100vh;
+            overflow-x: hidden; display: flex;
+        }
+        #app-container { display: flex; width: 100%; min-height: 100vh; position: relative; }
+
+        /* --- SIDEBAR (identical to the dashboard) --- */
+        aside {
+            width: 260px; background: rgba(10, 22, 40, 0.6);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border-right: 0.5px solid var(--color-card-border);
+            height: 100vh; position: fixed; left: 0; top: 0;
+            display: flex; flex-direction: column; padding: 24px 0; z-index: 100;
+        }
+        .brand-section { padding: 0 24px 32px 24px; border-bottom: 0.5px solid var(--color-card-border); margin-bottom: 24px; }
+        .brand-logo-text { font-family: var(--font-display); font-size: 20px; font-weight: 700; letter-spacing: 0.5px; color: var(--color-text-main); display: flex; align-items: center; gap: 10px; }
+        .brand-logo-text span { color: var(--color-accent-gold); }
+        .nav-links { list-style: none; display: flex; flex-direction: column; gap: 8px; padding: 0 12px; flex-grow: 1; }
+        .nav-links a { display: flex; align-items: center; gap: 16px; padding: 12px 16px; color: var(--color-text-muted); text-decoration: none; border-radius: 12px; font-weight: 500; font-size: 13px; position: relative; transition: var(--transition-smooth); }
+        .nav-links a svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 1.5; fill: none; }
+        .nav-links a:hover { color: var(--color-text-main); background: rgba(255, 255, 255, 0.02); }
+        .nav-links li.active a { color: var(--color-accent-gold); background: rgba(212, 175, 55, 0.05); font-weight: 600; }
+        .nav-links li.active a::before { content: ''; position: absolute; left: 0; top: 15%; height: 70%; width: 3px; background: var(--color-accent-gold); border-radius: 0 4px 4px 0; box-shadow: 0 0 10px var(--color-accent-gold); }
+        .nav-links li.btn-inert { opacity: 0.5; }
+        .sidebar-footer { padding: 16px 24px 0 24px; border-top: 0.5px solid var(--color-card-border); color: var(--color-text-muted); font-size: 11px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-accent-mint); box-shadow: 0 0 8px var(--color-accent-mint); }
+        .status-dot.offline { background: #EF4444; box-shadow: 0 0 8px #EF4444; }
+
+        /* --- MAIN --- */
+        main { margin-left: 260px; flex-grow: 1; padding: 32px 40px; min-height: 100vh; display: flex; flex-direction: column; gap: 24px; }
+        header { display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 8px; }
+        .header-title-area { display: flex; flex-direction: column; gap: 4px; }
+        .header-title-area h1 { font-family: var(--font-display); font-size: 28px; font-weight: 600; }
+        .header-sub { font-size: 13px; color: var(--color-text-muted); }
+        .header-count { font-size: 12px; font-weight: 700; color: var(--color-accent-gold); background: rgba(212, 175, 55, 0.08); border: 0.5px solid rgba(212, 175, 55, 0.25); padding: 6px 14px; border-radius: 20px; }
+
+        /* --- BATCH LIST --- */
+        .batch-list { display: flex; flex-direction: column; gap: 16px; }
+        .batch-card {
+            display: block; text-decoration: none; color: inherit;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.015) 100%);
+            border: 0.5px solid var(--color-card-border);
+            border-top: 1px solid var(--color-card-highlight);
+            border-radius: 16px; padding: 20px 24px;
+            backdrop-filter: blur(12px) saturate(120%); -webkit-backdrop-filter: blur(12px) saturate(120%);
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.06), 0 8px 24px rgba(10, 22, 40, 0.35);
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .batch-card:hover { transform: translateY(-3px); border-color: rgba(212, 175, 55, 0.35); box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.08), 0 16px 38px rgba(10, 22, 40, 0.5), 0 0 22px rgba(212, 175, 55, 0.06); }
+        .batch-card.current { border-color: rgba(93, 202, 165, 0.35); }
+        .batch-top { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+        .batch-name-area { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+        .batch-name { font-family: var(--font-display); font-size: 19px; font-weight: 600; color: var(--color-text-main); }
+        .batch-date { font-size: 12px; color: var(--color-text-muted); }
+        .current-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--color-accent-mint); background: rgba(93, 202, 165, 0.12); border: 0.5px solid rgba(93, 202, 165, 0.35); padding: 2px 9px; border-radius: 20px; }
+        .batch-view { font-size: 12px; font-weight: 600; color: var(--color-accent-gold); display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+
+        /* stat pills */
+        .batch-stats { display: flex; gap: 12px; flex-wrap: wrap; }
+        .stat-pill { display: flex; flex-direction: column; gap: 1px; min-width: 92px; padding: 10px 14px; border-radius: 12px; background: rgba(255, 255, 255, 0.02); border: 0.5px solid var(--color-card-border); }
+        .stat-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--color-text-muted); }
+        .stat-value { font-family: var(--font-display); font-size: 22px; font-weight: 600; color: var(--color-text-main); }
+        .stat-value.mint { color: var(--color-accent-mint); }
+        .stat-value.red { color: #F2A1A1; }
+        .stat-value.gold { color: var(--color-accent-gold); }
+
+        .batch-actions { margin-top: 14px; display: flex; gap: 12px; align-items: center; }
+        .export-link { font-size: 11px; font-weight: 600; letter-spacing: 0.3px; color: var(--color-accent-gold); text-decoration: none; background: rgba(212, 175, 55, 0.08); border: 0.5px solid rgba(212, 175, 55, 0.3); padding: 5px 11px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; transition: var(--transition-smooth); }
+        .export-link:hover { background: rgba(212, 175, 55, 0.16); border-color: rgba(212, 175, 55, 0.5); }
+        .export-link.disabled { opacity: 0.4; pointer-events: none; }
+        .export-link svg { stroke: currentColor; }
+
+        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; color: var(--color-text-muted); font-size: 13px; text-align: center; border: 0.5px dashed rgba(255, 255, 255, 0.08); border-radius: 16px; }
+        .empty-state svg { width: 32px; height: 32px; stroke: currentColor; stroke-width: 1.5; fill: none; margin-bottom: 12px; opacity: 0.5; }
+
+        @media (max-width: 1024px) {
+            aside { width: 70px; }
+            .brand-section { padding: 0 0 24px 0; display: flex; justify-content: center; }
+            .brand-logo-text span { display: none; }
+            .brand-logo-text::before { content: 'D'; color: var(--color-accent-gold); font-family: var(--font-display); font-size: 24px; font-weight: 700; }
+            .nav-links a span { display: none; }
+            .nav-links a { justify-content: center; padding: 12px; }
+            .sidebar-footer { justify-content: center; padding: 16px 0 0 0; }
+            .sidebar-footer span { display: none; }
+            main { margin-left: 70px; padding: 24px 28px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app-container">
+        <!-- SIDEBAR NAV (History active) -->
+        <aside>
+            <div class="brand-section">
+                <div class="brand-logo-text"><span>Dhyaan</span><span>VB</span></div>
+            </div>
+            <ul class="nav-links">
+                <li>
+                    <a href="/">
+                        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                        <span>Home</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/">
+                        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        <span>Upload</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/">
+                        <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 9.24v3.76z"></path></svg>
+                        <span>Call</span>
+                    </a>
+                </li>
+                <li class="active">
+                    <a href="/history">
+                        <svg viewBox="0 0 24 24"><path d="M3 3v5h5"></path><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"></path><polyline points="12 7 12 12 15 15"></polyline></svg>
+                        <span>History</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/retries">
+                        <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                        <span>Failed / Retry</span>
+                    </a>
+                </li>
+                <li class="btn-inert">
+                    <a href="#">
+                        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        <span>Leads</span>
+                    </a>
+                </li>
+            </ul>
+            <div class="sidebar-footer">
+                <div class="status-dot {% if not db_online %}offline{% endif %}"></div>
+                <span>{% if db_online %}DB CONNECTED{% else %}DB OFFLINE{% endif %}</span>
+            </div>
+        </aside>
+
+        <!-- MAIN WINDOW -->
+        <main>
+            <header>
+                <div class="header-title-area">
+                    <h1>Batch History</h1>
+                    <div class="header-sub">Every calling batch, newest first &middot; click any batch to drill into its leads &amp; recordings</div>
+                </div>
+                <div class="header-count">{{ batches|length }} batch{{ 'es' if batches|length != 1 else '' }}</div>
+            </header>
+
+            {% if batches %}
+            <div class="batch-list">
+                {% for b in batches %}
+                <a class="batch-card{% if b.is_current %} current{% endif %}" href="/history/{{ b.id }}">
+                    <div class="batch-top">
+                        <div class="batch-name-area">
+                            <span class="batch-name">{{ b.name }}</span>
+                            {% if b.is_current %}<span class="current-badge">Current</span>{% endif %}
+                            <span class="batch-date">{{ b.created }}</span>
+                        </div>
+                        <span class="batch-view">Open batch
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </span>
+                    </div>
+                    <div class="batch-stats">
+                        <div class="stat-pill"><span class="stat-label">Total</span><span class="stat-value">{{ b.total }}</span></div>
+                        <div class="stat-pill"><span class="stat-label">Connected</span><span class="stat-value mint">{{ b.connected }}</span></div>
+                        <div class="stat-pill"><span class="stat-label">Not Conn.</span><span class="stat-value red">{{ b.not_connected }}</span></div>
+                        <div class="stat-pill"><span class="stat-label">Verified</span><span class="stat-value gold">{{ b.verified }}</span></div>
+                        <div class="stat-pill"><span class="stat-label">Spend</span><span class="stat-value">&#8377;{{ "{:,.0f}".format(b.spend) }}</span></div>
+                    </div>
+                    <div class="batch-actions">
+                        <a class="export-link{% if not b.verified %} disabled{% endif %}"
+                           href="/export-verified?campaign_id={{ b.id }}"
+                           onclick="event.stopPropagation();">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            Export verified{% if b.verified %} ({{ b.verified }}){% endif %}
+                        </a>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <svg viewBox="0 0 24 24"><path d="M3 3v5h5"></path><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"></path><polyline points="12 7 12 12 15 15"></polyline></svg>
+                <span>No batches yet — upload a CSV and Start Calling from the dashboard, and every batch will archive here.</span>
+            </div>
+            {% endif %}
+        </main>
+    </div>
+</body>
+</html>

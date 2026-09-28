@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dhyaan Voice Brain — AI Calling Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        /* --- DESIGN SYSTEM & TOKENS --- */
+        :root {
+            --color-bg-canvas: #0A1628;
+            --color-bg-glow: #13243f;
+            --color-accent-gold: #D4AF37;
+            --color-accent-blue: #378ADD;
+            --color-accent-mint: #5DCAA5;
+            --color-accent-amber: #EF9F27;
+            --color-text-main: #E2E8F0;
+            --color-text-muted: #6B7D99;
+            --color-card-bg: rgba(255, 255, 255, 0.03);
+            --color-card-border: rgba(255, 255, 255, 0.08);
+            --color-card-highlight: rgba(255, 255, 255, 0.15);
+            --font-display: 'Playfair Display', Georgia, serif;
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--color-bg-canvas);
+            background-image: radial-gradient(circle at 10% 10%, var(--color-bg-glow) 0%, var(--color-bg-canvas) 70%);
+            background-attachment: fixed;
+            color: var(--color-text-main);
+            font-family: var(--font-sans);
+            font-size: 14px;
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+        }
+
+        /* --- LAYOUT STRUCTURE --- */
+        #app-container { display: flex; width: 100%; min-height: 100vh; position: relative; }
+
+        /* --- LEFT SIDEBAR NAV --- */
+        aside {
+            width: 260px;
+            background: rgba(10, 22, 40, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 0.5px solid var(--color-card-border);
+            height: 100vh;
+            position: fixed;
+            left: 0; top: 0;
+            display: flex;
+            flex-direction: column;
+            padding: 24px 0;
+            z-index: 100;
+            transition: var(--transition-smooth);
+        }
+
+        .brand-section {
+            padding: 0 24px 32px 24px;
+            border-bottom: 0.5px solid var(--color-card-border);
+            margin-bottom: 24px;
+        }
+
+        .brand-logo-text {
+            font-family: var(--font-display);
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: var(--color-text-main);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-logo-text span { color: var(--color-accent-gold); }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 0 12px;
+            flex-grow: 1;
+        }
+
+        .nav-links a {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 16px;
+            color: var(--color-text-muted);
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 500;
+            font-size: 13px;
+            position: relative;
+            transition: var(--transition-smooth);
+        }
+
+        .nav-links a svg {
+            width: 20px; height: 20px;
+            stroke: currentColor;
+            stroke-width: 1.5;
+            fill: none;
+            transition: var(--transition-smooth);
+        }
+
+        .nav-links a:hover { color: var(--color-text-main); background: rgba(255, 255, 255, 0.02); }
+
+        .nav-links li.active a {
+            color: var(--color-accent-gold);
+            background: rgba(212, 175, 55, 0.05);
+            font-weight: 600;
+        }
+
+        .nav-links li.active a::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 15%;
+            height: 70%; width: 3px;
+            background: var(--color-accent-gold);
+            border-radius: 0 4px 4px 0;
+            box-shadow: 0 0 10px var(--color-accent-gold);
+        }
+
+        .sidebar-footer {
+            padding: 16px 24px 0 24px;
+            border-top: 0.5px solid var(--color-card-border);
+            color: var(--color-text-muted);
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--color-accent-mint);
+            box-shadow: 0 0 8px var(--color-accent-mint);
+        }
+
+        .status-dot.offline { background: #EF4444; box-shadow: 0 0 8px #EF4444; }
+
+        /* --- MAIN CONTENT AREA --- */
+        main {
+            margin-left: 260px;
+            flex-grow: 1;
+            padding: 32px 40px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+            transition: var(--transition-smooth);
+            position: relative;
+        }
+
+        /* --- TOP BAR --- */
+        header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; }
+        .header-title-area { display: flex; flex-direction: column; gap: 4px; }
+        .header-title-area h1 { font-family: var(--font-display); font-size: 28px; font-weight: 600; }
+
+        .header-campaign-badge {
+            align-self: flex-start;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--color-accent-gold);
+            background: rgba(212, 175, 55, 0.08);
+            border: 0.5px solid rgba(212, 175, 55, 0.2);
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .header-actions { display: flex; gap: 16px; }
+
+        /* --- BUTTONS --- */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-weight: 500;
+            font-size: 13px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            border: none;
+            outline: none;
+        }
+
+        .btn:active:not(.btn-inert) { transform: scale(0.98); }
+
+        .btn-primary {
+            background: transparent;
+            color: var(--color-accent-gold);
+            border: 0.5px solid var(--color-accent-gold);
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.05);
+        }
+
+        .btn-primary:hover {
+            background: var(--color-accent-gold);
+            color: #0A1628;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.25);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--color-text-muted);
+            border: 0.5px solid var(--color-card-border);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--color-text-main);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-inert { opacity: 0.5; cursor: not-allowed; }
+
+        /* Start Calling — blue glass (the live-dial action) */
+        .btn-call {
+            color: var(--color-accent-blue);
+            background: rgba(55, 138, 221, 0.10);
+            border: 0.5px solid rgba(55, 138, 221, 0.40);
+        }
+        .btn-call:hover {
+            background: rgba(55, 138, 221, 0.18);
+            border-color: rgba(55, 138, 221, 0.60);
+            box-shadow: 0 0 18px rgba(55, 138, 221, 0.20);
+        }
+
+        /* --- FROSTED GLASS CARDS --- */
+        .card {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.015) 100%);
+            border: 0.5px solid var(--color-card-border);
+            border-top: 1px solid var(--color-card-highlight);
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(12px) saturate(120%);
+            -webkit-backdrop-filter: blur(12px) saturate(120%);
+            box-shadow:
+                inset 0 1px 1px rgba(255, 255, 255, 0.06),
+                0 8px 24px rgba(10, 22, 40, 0.35);
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                        border-color 0.2s ease,
+                        box-shadow 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            border-radius: 16px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 35%);
+            pointer-events: none;
+        }
+
+        .card::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 12%;
+            width: 76%; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+            pointer-events: none;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(255, 255, 255, 0.22);
+            box-shadow:
+                inset 0 1px 1px rgba(255, 255, 255, 0.08),
+                0 16px 38px rgba(10, 22, 40, 0.5),
+                0 0 22px rgba(255, 255, 255, 0.04);
+        }
+
+        .card-title-muted {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--color-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 8px;
+        }
+
+        /* --- METRIC TILES (5 small cards) --- */
+        .metrics-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 24px; }
+        .metric-tile { padding: 20px 24px; display: flex; flex-direction: column; gap: 2px; }
+
+        .metric-accent {
+            display: flex;
+            align-items: flex-end;
+            gap: 3px;
+            height: 14px;
+            margin: 8px 0 2px 0;
+            color: var(--color-accent-gold);
+        }
+        .metric-accent.mint  { color: var(--color-accent-mint); }
+        .metric-accent.amber { color: var(--color-accent-amber); }
+        .metric-accent.blue  { color: var(--color-accent-blue); }
+        .metric-accent span { width: 3px; border-radius: 2px; background: currentColor; opacity: 0.30; }
+        .metric-accent span:last-child { opacity: 0.95; box-shadow: 0 0 8px currentColor; }
+
+        .metric-value {
+            font-family: var(--font-display);
+            font-size: 32px;
+            font-weight: 600;
+            margin: 2px 0 2px 0;
+            text-shadow: 0 0 14px rgba(212, 175, 55, 0.14), 0 0 4px rgba(212, 175, 55, 0.08);
+        }
+        .metric-value.mint { color: var(--color-accent-mint); text-shadow: 0 0 16px rgba(93, 202, 165, 0.30), 0 0 4px rgba(93, 202, 165, 0.18); }
+        .metric-value.amber { color: var(--color-accent-amber); text-shadow: 0 0 16px rgba(239, 159, 39, 0.30), 0 0 4px rgba(239, 159, 39, 0.18); }
+        .metric-value.blue { color: var(--color-accent-blue); text-shadow: 0 0 16px rgba(55, 138, 221, 0.30), 0 0 4px rgba(55, 138, 221, 0.18); }
+        .metric-value.gold { color: var(--color-accent-gold); text-shadow: 0 0 16px rgba(212, 175, 55, 0.30), 0 0 4px rgba(212, 175, 55, 0.18); }
+        .metric-value.red { color: #F2A1A1; text-shadow: 0 0 16px rgba(239, 68, 68, 0.30), 0 0 4px rgba(239, 68, 68, 0.18); }
+        .metric-accent.red { color: #EF4444; }
+
+        .hero-subtext { font-size: 13px; color: var(--color-text-muted); font-weight: 500; }
+
+        /* --- CALLING BOARD --- */
+        .funnel-board-container { display: flex; flex-direction: column; gap: 16px; }
+        .funnel-header { display: flex; align-items: center; justify-content: space-between; }
+        .funnel-header h2 { font-family: var(--font-display); font-size: 20px; font-weight: 600; }
+
+        .funnel-columns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+
+        .funnel-column {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.008) 100%);
+            border: 0.5px solid rgba(255, 255, 255, 0.05);
+            border-top: 1px solid rgba(255, 255, 255, 0.10);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 400px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.03);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .funnel-column:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05), 0 10px 26px rgba(10, 22, 40, 0.35);
+        }
+
+        .column-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 8px;
+            border-bottom: 0.5px solid rgba(255, 255, 255, 0.04);
+            margin-bottom: 4px;
+        }
+
+        .column-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--color-text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .column-title-dot { width: 6px; height: 6px; border-radius: 50%; }
+        .dot-queued   { background: var(--color-accent-gold); }
+        .dot-calling  { background: var(--color-accent-blue); }
+        .dot-done     { background: var(--color-accent-amber); }
+        .dot-verified { background: var(--color-accent-mint); }
+
+        .column-chip {
+            background: rgba(255, 255, 255, 0.04);
+            border: 0.5px solid var(--color-card-border);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--color-text-main);
+        }
+
+        .column-cards-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 520px;
+            overflow-y: auto;
+            scrollbar-width: none;
+        }
+        .column-cards-container::-webkit-scrollbar { display: none; }
+
+        /* --- KANBAN MINI CARD --- */
+        .lead-mini-card {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.045) 0%, rgba(255, 255, 255, 0.015) 100%);
+            border: 0.5px solid var(--color-card-border);
+            border-top: 1px solid rgba(255, 255, 255, 0.10);
+            border-radius: 12px;
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.04);
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                        border-color 0.2s ease,
+                        box-shadow 0.2s ease;
+        }
+
+        .lead-mini-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.22);
+            box-shadow:
+                inset 0 1px 1px rgba(255, 255, 255, 0.07),
+                0 8px 18px rgba(10, 22, 40, 0.4),
+                0 0 14px rgba(255, 255, 255, 0.03);
+        }
+
+        .lead-card-header { display: flex; justify-content: space-between; align-items: center; }
+        .lead-name { font-weight: 600; color: var(--color-text-main); font-size: 13px; }
+        .lead-phone { font-family: monospace; font-size: 11px; color: var(--color-text-muted); letter-spacing: 0.5px; }
+
+        .lead-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            font-size: 10px;
+            color: var(--color-text-muted);
+            border-top: 0.5px solid rgba(255, 255, 255, 0.03);
+            padding-top: 6px;
+            margin-top: 2px;
+        }
+
+        .lead-attempts, .lead-cost {
+            background: rgba(255, 255, 255, 0.02);
+            border: 0.5px solid var(--color-card-border);
+            padding: 1px 5px;
+            border-radius: 4px;
+        }
+        .lead-cost { color: var(--color-accent-gold); }
+        .lead-status { text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* --- RATING SYSTEM (3 layers) --- */
+        .rating-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 0.5px solid rgba(255, 255, 255, 0.04);
+        }
+
+        /* Layer 1 — call-quality + outcome badges */
+        .q-badge {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            padding: 2px 7px;
+            border-radius: 6px;
+            border: 0.5px solid transparent;
+            white-space: nowrap;
+        }
+        .q-good    { color: var(--color-accent-mint);  background: rgba(93, 202, 165, 0.10);  border-color: rgba(93, 202, 165, 0.30); }
+        .q-partial { color: var(--color-accent-amber); background: rgba(239, 159, 39, 0.10);  border-color: rgba(239, 159, 39, 0.30); }
+        .q-junk    { color: #8595AD;                   background: rgba(133, 149, 173, 0.08); border-color: rgba(133, 149, 173, 0.25); }
+        .q-none    { color: var(--color-text-muted);   background: rgba(255, 255, 255, 0.02); border-color: rgba(255, 255, 255, 0.06); font-weight: 600; }
+
+        /* Layer 2 — heat flames */
+        .heat { font-size: 11px; line-height: 1; letter-spacing: 1px; }
+        .heat-hot  { filter: hue-rotate(-25deg) saturate(1.6) brightness(1.05); }
+        .heat-warm { filter: saturate(1.15); }
+        .heat-cold { filter: grayscale(1) opacity(0.5); }
+        .heat-empty { color: var(--color-text-muted); opacity: 0.4; letter-spacing: 3px; font-size: 9px; }
+
+        /* Layer 3 — manual star rating */
+        .star-form { margin-top: 6px; }
+        .stars { display: flex; gap: 3px; }
+        .star {
+            font-size: 14px;
+            line-height: 1;
+            color: rgba(255, 255, 255, 0.14);
+            cursor: pointer;
+            transition: color 0.15s ease, transform 0.15s ease, text-shadow 0.15s ease;
+        }
+        .star:hover { transform: scale(1.18); }
+        .star.filled, .star.preview { color: var(--color-accent-gold); text-shadow: 0 0 8px rgba(212, 175, 55, 0.45); }
+
+        /* Sort-by-hottest toggle */
+        .sort-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: var(--color-text-muted);
+            background: rgba(255, 255, 255, 0.03);
+            border: 0.5px solid var(--color-card-border);
+            padding: 7px 13px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+        .sort-toggle:hover { color: var(--color-text-main); border-color: rgba(255, 255, 255, 0.15); }
+        .sort-toggle:active { transform: scale(0.98); }
+        .sort-toggle.active {
+            color: var(--color-accent-gold);
+            border-color: rgba(212, 175, 55, 0.4);
+            background: rgba(212, 175, 55, 0.06);
+            box-shadow: 0 0 12px rgba(212, 175, 55, 0.08);
+        }
+        .sort-toggle svg { width: 13px; height: 13px; stroke: currentColor; fill: none; }
+
+        .pulse-indicator {
+            width: 6px; height: 6px;
+            background: var(--color-accent-blue);
+            border-radius: 50%;
+            box-shadow: 0 0 0 0 rgba(55, 138, 221, 0.7);
+            animation: pulse-ring 1.5s infinite;
+        }
+
+        @keyframes pulse-ring {
+            0%   { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(55, 138, 221, 0.7); }
+            70%  { transform: scale(1);    box-shadow: 0 0 0 6px rgba(55, 138, 221, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(55, 138, 221, 0); }
+        }
+
+        .empty-column-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 16px;
+            color: var(--color-text-muted);
+            font-size: 12px;
+            text-align: center;
+            border: 0.5px dashed rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            height: 100px;
+        }
+        .empty-column-state svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 1.5; fill: none; margin-bottom: 8px; opacity: 0.5; }
+
+        /* --- IN-FLOW MODAL --- */
+        .modal-wrapper {
+            /* FIXED to the viewport, not the (very tall) <main>. When this was
+               position:absolute inside main, the overlay stretched to main's full
+               height and align-items:center parked the card ~1000px down the page,
+               leaving a blank/blurred screen at the top that you had to scroll past
+               to reach the Upload / Start-Calling panel. Fixed = always on-screen. */
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(10, 22, 40, 0.85);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            overflow-y: auto;          /* tall modals scroll instead of clipping */
+            padding: 24px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .modal-wrapper.active { display: flex; opacity: 1; }
+
+        .modal-card {
+            background: rgba(16, 30, 50, 0.95);
+            border: 0.5px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            width: 480px;
+            max-width: 100%;
+            padding: 36px;
+            max-height: calc(100vh - 48px);   /* never taller than the screen */
+            overflow-y: auto;                  /* scroll inside the card if it is */
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(212, 175, 55, 0.05);
+            transform: scale(0.95);
+            transition: var(--transition-smooth);
+        }
+        .modal-wrapper.active .modal-card { transform: scale(1); }
+
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .modal-header h3 { font-family: var(--font-display); font-size: 22px; font-weight: 600; }
+
+        .modal-close-btn {
+            background: transparent; border: none;
+            color: var(--color-text-muted);
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .modal-close-btn:hover { color: var(--color-text-main); }
+        .modal-close-btn svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 1.5; fill: none; }
+
+        .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+        .form-group label { font-size: 11px; font-weight: 600; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 1px; }
+
+        .form-input {
+            background: rgba(255, 255, 255, 0.03);
+            border: 0.5px solid var(--color-card-border);
+            border-radius: 10px;
+            padding: 12px 16px;
+            color: var(--color-text-main);
+            font-family: var(--font-sans);
+            font-size: 13px;
+            outline: none;
+            transition: var(--transition-smooth);
+        }
+        .form-input:focus {
+            border-color: var(--color-accent-gold);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.1);
+        }
+
+        /* --- DRAG & DROP ZONE --- */
+        .file-dropzone {
+            border: 1px dashed var(--color-card-border);
+            border-radius: 12px;
+            padding: 32px 20px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.01);
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+        .file-dropzone:hover, .file-dropzone.dragover { border-color: var(--color-accent-gold); background: rgba(212, 175, 55, 0.02); }
+        .file-dropzone svg { width: 36px; height: 36px; stroke: var(--color-text-muted); stroke-width: 1.2; fill: none; transition: var(--transition-smooth); }
+        .file-dropzone:hover svg { stroke: var(--color-accent-gold); }
+        .file-dropzone-text { font-size: 13px; color: var(--color-text-muted); }
+        .file-dropzone-text span { color: var(--color-text-main); font-weight: 500; }
+        .file-dropzone-info { font-size: 11px; color: var(--color-text-muted); }
+
+        /* --- NOTICE / ERROR BANNER --- */
+        .banner {
+            border-radius: 12px;
+            padding: 12px 18px;
+            font-size: 13px;
+            font-weight: 500;
+            border: 0.5px solid transparent;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .banner-notice { color: var(--color-accent-mint); background: rgba(93, 202, 165, 0.08); border-color: rgba(93, 202, 165, 0.30); }
+        .banner-error  { color: #F2A1A1; background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.30); }
+
+        /* --- START CALLING (CONFIRM) MODAL --- */
+        .release-warn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--color-accent-amber);
+            background: rgba(239, 159, 39, 0.08);
+            border: 0.5px solid rgba(239, 159, 39, 0.30);
+            border-radius: 12px;
+            padding: 12px 14px;
+            font-size: 13px;
+            margin-bottom: 20px;
+        }
+        .release-warn svg { stroke: var(--color-accent-amber); flex-shrink: 0; }
+        .release-stats { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+        .release-stat { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--color-text-muted); }
+        .release-stat span:first-child { min-width: 130px; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; }
+        .release-stat strong { color: var(--color-text-main); font-weight: 600; }
+        .win-open   { color: var(--color-accent-mint) !important; }
+        .win-closed { color: #F2A1A1 !important; }
+        .win-range  { font-size: 11px; opacity: 0.7; }
+        .release-list-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--color-text-muted); margin-bottom: 8px; }
+        .release-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px 16px;
+            max-height: 160px;
+            overflow-y: auto;
+            padding: 12px;
+            border: 0.5px solid var(--color-card-border);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.02);
+            margin-bottom: 22px;
+        }
+        .release-num { font-family: monospace; font-size: 11px; color: var(--color-text-muted); letter-spacing: 0.4px; }
+        .release-empty {
+            font-size: 12px;
+            color: var(--color-text-muted);
+            background: rgba(255, 255, 255, 0.02);
+            border: 0.5px dashed rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 18px;
+            text-align: center;
+            margin-bottom: 22px;
+        }
+        .modal-actions { display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap; }
+
+        /* --- CONNECTION SECTIONS (Connected / Not Connected) --- */
+        .conn-section { display: flex; flex-direction: column; gap: 16px; }
+        .conn-section-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+        .conn-section-head h2 { font-family: var(--font-display); font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+        .conn-sub { font-size: 12px; color: var(--color-text-muted); }
+        .conn-count {
+            font-family: var(--font-sans); font-size: 12px; font-weight: 700;
+            color: var(--color-accent-mint); background: rgba(93, 202, 165, 0.12);
+            border: 0.5px solid rgba(93, 202, 165, 0.32); padding: 1px 9px; border-radius: 12px;
+        }
+        .conn-count.nc { color: #F2A1A1; background: rgba(239, 68, 68, 0.10); border-color: rgba(239, 68, 68, 0.32); }
+        .nc-dot { width: 9px; height: 9px; border-radius: 50%; background: #EF4444; box-shadow: 0 0 8px rgba(239,68,68,0.6); }
+
+        .conn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+        .nc-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+
+        /* Connected card — mint-edged glass */
+        .conn-card {
+            background: linear-gradient(145deg, rgba(93, 202, 165, 0.06) 0%, rgba(255, 255, 255, 0.012) 100%);
+            border: 0.5px solid rgba(93, 202, 165, 0.22);
+            border-top: 1px solid rgba(93, 202, 165, 0.35);
+            border-radius: 14px; padding: 14px 16px;
+            display: flex; flex-direction: column; gap: 7px;
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.04);
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .conn-card:hover { transform: translateY(-2px); border-color: rgba(93, 202, 165, 0.4); box-shadow: 0 8px 20px rgba(10, 22, 40, 0.4), 0 0 16px rgba(93, 202, 165, 0.08); }
+
+        /* Not-connected card — muted/red-edged glass, compact */
+        .nc-card {
+            background: linear-gradient(145deg, rgba(239, 68, 68, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+            border: 0.5px solid rgba(239, 68, 68, 0.18);
+            border-top: 1px solid rgba(239, 68, 68, 0.30);
+            border-radius: 12px; padding: 12px 14px;
+            display: flex; flex-direction: column; gap: 6px;
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.03);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .nc-card:hover { transform: translateY(-2px); border-color: rgba(239, 68, 68, 0.35); }
+
+        /* connection badges */
+        .conn-badge {
+            font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;
+            padding: 2px 8px; border-radius: 6px; border: 0.5px solid transparent; white-space: nowrap;
+        }
+        .conn-yes      { color: var(--color-accent-mint); background: rgba(93, 202, 165, 0.12); border-color: rgba(93, 202, 165, 0.35); }
+        .conn-noanswer { color: var(--color-accent-amber); background: rgba(239, 159, 39, 0.10); border-color: rgba(239, 159, 39, 0.32); }
+        .conn-failed   { color: #F2A1A1; background: rgba(239, 68, 68, 0.10); border-color: rgba(239, 68, 68, 0.35); }
+        .conn-na       { color: #8595AD; background: rgba(133, 149, 173, 0.08); border-color: rgba(133, 149, 173, 0.25); }
+        .conn-retry    { color: var(--color-gold,#D4AF37); background: rgba(212, 175, 55, 0.10); border-color: rgba(212, 175, 55, 0.35); }
+
+        .lead-dur { background: rgba(255,255,255,0.02); border: 0.5px solid var(--color-card-border); padding: 1px 5px; border-radius: 4px; }
+
+        /* recording link */
+        .conn-actions { margin-top: 4px; }
+        .rec-link {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-size: 11px; font-weight: 600; letter-spacing: 0.3px;
+            color: var(--color-accent-gold); text-decoration: none;
+            background: rgba(212, 175, 55, 0.08); border: 0.5px solid rgba(212, 175, 55, 0.30);
+            padding: 5px 11px; border-radius: 8px; transition: var(--transition-smooth);
+        }
+        .rec-link:hover { background: rgba(212, 175, 55, 0.16); border-color: rgba(212, 175, 55, 0.5); box-shadow: 0 0 12px rgba(212, 175, 55, 0.12); }
+        .rec-link svg { stroke: currentColor; }
+        .rec-none { font-size: 10px; color: var(--color-text-muted); opacity: 0.7; font-style: italic; }
+
+        /* transcript expander */
+        .transcript { margin-top: 4px; }
+        .transcript summary {
+            cursor: pointer; font-size: 11px; font-weight: 600; color: var(--color-text-muted);
+            letter-spacing: 0.4px; padding: 4px 0; outline: none; list-style: none;
+        }
+        .transcript summary::-webkit-details-marker { display: none; }
+        .transcript summary::before { content: '▸ '; color: var(--color-accent-gold); }
+        .transcript[open] summary::before { content: '▾ '; }
+        .transcript summary:hover { color: var(--color-text-main); }
+        .transcript-body {
+            margin-top: 6px; max-height: 180px; overflow-y: auto;
+            font-size: 11px; line-height: 1.6; color: var(--color-text-main);
+            white-space: pre-wrap; background: rgba(255, 255, 255, 0.02);
+            border: 0.5px solid var(--color-card-border); border-radius: 8px; padding: 10px 12px;
+        }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 1280px) {
+            .metrics-grid { grid-template-columns: repeat(3, 1fr); }
+            .funnel-columns { grid-template-columns: repeat(2, 1fr); }
+            .funnel-column { min-height: auto; }
+        }
+        @media (max-width: 1024px) {
+            aside { width: 70px; }
+            .brand-section { padding: 0 0 24px 0; display: flex; justify-content: center; }
+            .brand-logo-text span:not(:first-child), .brand-logo-text { font-size: 16px; }
+            .brand-logo-text span { display: none; }
+            .brand-logo-text::before { content: 'D'; color: var(--color-accent-gold); font-family: var(--font-display); font-size: 24px; font-weight: 700; }
+            .nav-links a span { display: none; }
+            .nav-links a { justify-content: center; padding: 12px; }
+            .sidebar-footer { justify-content: center; padding: 16px 0 0 0; }
+            .sidebar-footer span { display: none; }
+            main { margin-left: 70px; padding: 24px 28px; }
+        }
+        @media (max-width: 768px) {
+            .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+            .funnel-columns { grid-template-columns: 1fr; }
+            header { flex-direction: column; align-items: flex-start; gap: 16px; }
+            .header-actions { width: 100%; justify-content: space-between; }
+        }
+        /* --- VERIFIED LEAD CARDS (sketch layout: header / verdict / stars /
+              interest / 3 captured details / recording) navy + gold --- */
+        .vlead-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(258px, 1fr)); gap: 16px; }
+        .vlead-card {
+            background: linear-gradient(160deg, rgba(212, 175, 55, 0.07), var(--color-card-bg));
+            border: 1px solid rgba(212, 175, 55, 0.22);
+            border-radius: 14px; padding: 15px 17px;
+            display: flex; flex-direction: column; gap: 10px;
+            transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+        }
+        .vlead-card:hover { transform: translateY(-2px); border-color: rgba(212, 175, 55, 0.5);
+            box-shadow: 0 8px 22px rgba(10, 22, 40, 0.5), 0 0 18px rgba(212, 175, 55, 0.10); }
+        .vlead-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+            border-bottom: 0.5px solid var(--color-card-border); padding-bottom: 9px; }
+        .vlead-name { font-family: var(--font-display); font-weight: 600; font-size: 17px; color: var(--color-text-main); }
+        .vlead-phone { font-family: monospace; font-size: 13px; color: var(--color-accent-gold);
+            text-decoration: none; letter-spacing: 0.5px; white-space: nowrap; }
+        .vlead-phone:hover { text-decoration: underline; }
+        .vlead-verdict { font-size: 12px; font-weight: 700; letter-spacing: 0.5px; min-height: 15px; }
+        .verdict-hot { color: var(--color-accent-gold); text-shadow: 0 0 12px rgba(212, 175, 55, 0.45); }
+        .verdict-warm { color: var(--color-accent-amber); }
+        .verdict-cold, .verdict-none { color: var(--color-text-muted); font-weight: 600; }
+        .vlead-stars { display: flex; gap: 3px; font-size: 15px; line-height: 1; }
+        .vstar { color: rgba(255, 255, 255, 0.14); }
+        .vstar.on { color: var(--color-accent-gold); }
+        .badge-interested { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 11px;
+            border-radius: 99px; color: var(--color-accent-mint); background: rgba(93, 202, 165, 0.12);
+            border: 1px solid rgba(93, 202, 165, 0.35); }
+        .badge-not { display: inline-block; font-size: 11px; padding: 3px 11px; border-radius: 99px;
+            color: var(--color-text-muted); background: rgba(133, 149, 173, 0.08); border: 1px solid rgba(133, 149, 173, 0.22); }
+        .vlead-details { display: flex; flex-direction: column; gap: 6px; margin-top: 2px;
+            padding-top: 9px; border-top: 0.5px solid var(--color-card-border); }
+        .detail-row { display: flex; justify-content: space-between; font-size: 13px; gap: 10px; }
+        .detail-row span { color: var(--color-text-muted); }
+        .detail-row strong { color: var(--color-text-main); font-weight: 600; text-align: right; }
+        .vlead-rec { margin-top: 3px; font-size: 12px; color: var(--color-accent-gold); text-decoration: none;
+            display: inline-flex; align-items: center; gap: 5px; }
+        .vlead-rec:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div id="app-container">
+        <!-- SIDEBAR NAV -->
+        <aside>
+            <div class="brand-section">
+                <div class="brand-logo-text"><span>Dhyaan</span><span>VB</span></div>
+            </div>
+            <ul class="nav-links">
+                <li class="{% if not history_view %}active{% endif %}">
+                    <a href="/">
+                        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                        <span>Home</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="openUploadModal(); return false;">
+                        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        <span>Upload</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="openStartCallingModal(); return false;">
+                        <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 9.24v3.76z"></path></svg>
+                        <span>Call</span>
+                    </a>
+                </li>
+                <li class="{% if history_view %}active{% endif %}">
+                    <a href="/history">
+                        <svg viewBox="0 0 24 24"><path d="M3 3v5h5"></path><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"></path><polyline points="12 7 12 12 15 15"></polyline></svg>
+                        <span>History</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/retries">
+                        <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                        <span>Failed / Retry</span>
+                    </a>
+                </li>
+                <li class="btn-inert">
+                    <a href="#">
+                        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        <span>Leads</span>
+                    </a>
+                </li>
+            </ul>
+            <div class="sidebar-footer">
+                <div class="status-dot {% if not db_online %}offline{% endif %}"></div>
+                <span>{% if db_online %}DB CONNECTED{% else %}DB OFFLINE{% endif %}</span>
+            </div>
+        </aside>
+
+        <!-- MAIN WINDOW -->
+        <main>
+            <!-- TOP BAR -->
+            <header>
+                <div class="header-title-area">
+                    <h1>{% if history_view %}Batch Detail{% else %}AI Calling{% endif %}</h1>
+                    <div class="header-campaign-badge">
+                        {%- if history_view -%}
+                        {{ campaign_name }}{% if campaign_created %} &middot; {{ campaign_created }}{% endif %}
+                        {%- else -%}
+                        Active: {{ campaign_name }}
+                        {%- endif -%}
+                    </div>
+                </div>
+                <div class="header-actions">
+                    {% if history_view %}
+                    <a class="btn btn-secondary" href="/history" style="text-decoration:none;">&larr; Back to History</a>
+                    {% else %}
+                    <button class="btn btn-primary" onclick="openUploadModal()">Upload leads</button>
+                    <button class="btn btn-call" onclick="openStartCallingModal()">Start Calling</button>
+                    {% endif %}
+                </div>
+            </header>
+
+            {% if notice %}<div class="banner banner-notice">{{ notice }}</div>{% endif %}
+            {% if error %}<div class="banner banner-error">{{ error }}</div>{% endif %}
+
+            {% if chunk_status and not history_view %}
+            <div class="banner {{ 'banner-notice' if chunk_active else 'banner-chunk-idle' }}" style="display:block;">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                    <strong>
+                        {% if chunk_active %}🔵 Calling in progress{% elif chunk_status == 'done' %}✅ Chunked run complete{% elif chunk_status == 'paused_no_funds' %}💰 Paused — Bolna balance empty (top up & re-run to resume){% elif chunk_status == 'stopped' %}⏸ Chunked run stopped{% elif chunk_status == 'failed' %}⚠ Chunked run failed{% else %}Chunked run{% endif %}
+                        — chunk {{ chunk_done }} of {{ chunk_total }} · {{ chunk_leads_dialed }}/{{ chunk_leads_total }} dialed
+                    </strong>
+                    <span style="opacity:.8;font-size:13px;">{{ chunk_message }}</span>
+                </div>
+                <div style="margin-top:8px;height:8px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden;">
+                    <div style="height:100%;border-radius:99px;background:linear-gradient(90deg,#D4AF37,#f0d77a);width:{{ ((chunk_done / chunk_total * 100) | round(0, 'floor')) if chunk_total else 0 }}%;transition:width .4s;"></div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- METRIC TILES -->
+            <section class="metrics-grid">
+                <div class="card metric-tile">
+                    <div class="card-title-muted">Total</div>
+                    <div class="metric-value gold count-up" data-val="{{ total }}">{{ total }}</div>
+                    <div class="metric-accent">
+                        <span style="height:5px"></span><span style="height:8px"></span><span style="height:6px"></span><span style="height:11px"></span><span style="height:7px"></span><span style="height:13px"></span><span style="height:9px"></span>
+                    </div>
+                    <div class="hero-subtext">Leads in DB</div>
+                </div>
+                <div class="card metric-tile">
+                    <div class="card-title-muted">Connected</div>
+                    <div class="metric-value mint count-up" data-val="{{ connected }}">{{ connected }}</div>
+                    <div class="metric-accent mint">
+                        <span style="height:6px"></span><span style="height:9px"></span><span style="height:5px"></span><span style="height:10px"></span><span style="height:8px"></span><span style="height:12px"></span><span style="height:7px"></span>
+                    </div>
+                    <div class="hero-subtext">Picked up &middot; talked to Dhyan</div>
+                </div>
+                <div class="card metric-tile">
+                    <div class="card-title-muted">Not Connected</div>
+                    <div class="metric-value red count-up" data-val="{{ not_connected }}">{{ not_connected }}</div>
+                    <div class="metric-accent red">
+                        <span style="height:8px"></span><span style="height:6px"></span><span style="height:10px"></span><span style="height:7px"></span><span style="height:12px"></span><span style="height:6px"></span><span style="height:9px"></span>
+                    </div>
+                    <div class="hero-subtext">No-answer / failed{% if pending %} &middot; {{ pending }} in flight{% endif %}</div>
+                </div>
+                <div class="card metric-tile">
+                    <div class="card-title-muted">Verified</div>
+                    <div class="metric-value gold count-up" data-val="{{ verified }}">{{ verified }}</div>
+                    <div class="metric-accent">
+                        <span style="height:7px"></span><span style="height:5px"></span><span style="height:9px"></span><span style="height:6px"></span><span style="height:11px"></span><span style="height:8px"></span><span style="height:13px"></span>
+                    </div>
+                    <div class="hero-subtext">Interested &amp; qualified</div>
+                </div>
+                <div class="card metric-tile">
+                    <div class="card-title-muted">Spend ₹</div>
+                    <div class="metric-value gold">₹<span class="count-up-decimal" data-val="{{ spend }}">{{ "{:,.0f}".format(spend) }}</span></div>
+                    <div class="metric-accent">
+                        <span style="height:6px"></span><span style="height:9px"></span><span style="height:7px"></span><span style="height:11px"></span><span style="height:8px"></span><span style="height:13px"></span><span style="height:10px"></span>
+                    </div>
+                    <div class="hero-subtext">Bolna all-in &middot; this month</div>
+                </div>
+                <div class="card metric-tile">
+                    <div class="card-title-muted">Bolna Balance</div>
+                    {% if bolna_balance_ok and bolna_wallet is not none %}
+                    <div class="metric-value {{ 'red' if low_balance else 'mint' }}">₹{{ "{:,.0f}".format(bolna_wallet) }}</div>
+                    <div class="metric-accent {{ 'red' if low_balance else 'mint' }}">
+                        <span style="height:9px"></span><span style="height:6px"></span><span style="height:11px"></span><span style="height:7px"></span><span style="height:10px"></span><span style="height:6px"></span><span style="height:12px"></span>
+                    </div>
+                    <div class="hero-subtext">
+                        {% if low_balance %}⚠ Low — top up (below ₹{{ "{:,.0f}".format(low_balance_threshold) }}){% else %}Wallet &middot; live from Bolna{% endif %}
+                    </div>
+                    {% else %}
+                    <div class="metric-value red">—</div>
+                    <div class="metric-accent red">
+                        <span style="height:7px"></span><span style="height:9px"></span><span style="height:6px"></span><span style="height:10px"></span><span style="height:7px"></span><span style="height:11px"></span><span style="height:8px"></span>
+                    </div>
+                    <div class="hero-subtext" title="{{ bolna_balance_error or 'unavailable' }}">Balance unavailable</div>
+                    {% endif %}
+                </div>
+            </section>
+
+            <!-- RATING BLOCK MACRO (Layers 1-3, shared by every card) -->
+            {% macro rating_block(lead) %}
+                                <div class="rating-row">
+                                    {% if lead.outcome == 'verified' %}
+                                    <span class="q-badge q-good" title="call outcome">verified</span>
+                                    {% elif lead.outcome in ['callback_requested', 'callback'] %}
+                                    <span class="q-badge q-partial" title="call outcome">callback</span>
+                                    {% elif lead.outcome in ['not_interested', 'no_interest', 'no_response'] %}
+                                    <span class="q-badge q-junk" title="call outcome">{{ lead.outcome.replace('_', ' ') }}</span>
+                                    {% elif lead.outcome %}
+                                    <span class="q-badge q-none" title="call outcome">{{ lead.outcome.replace('_', ' ') }}</span>
+                                    {% endif %}
+                                    {% if lead.call_quality %}
+                                    <span class="q-badge q-{{ lead.call_quality }}" title="call quality">{{ lead.call_quality }}</span>
+                                    {% endif %}
+                                    <span class="heat heat-{{ lead.heat_score or 'none' }}" title="heat: {{ lead.heat_score or 'unscored' }}">
+                                        {%- if lead.heat_score == 'hot' -%}🔥🔥🔥
+                                        {%- elif lead.heat_score == 'warm' -%}🔥🔥
+                                        {%- elif lead.heat_score == 'cold' -%}🔥
+                                        {%- else -%}<span class="heat-empty">· · ·</span>
+                                        {%- endif -%}
+                                    </span>
+                                </div>
+                                <form class="star-form" method="post" action="/rate">
+                                    <input type="hidden" name="lead_id" value="{{ lead.id }}">
+                                    <input type="hidden" name="stars" value="" class="star-input">
+                                    <input type="hidden" name="note" value="" class="note-input">
+                                    <div class="stars" data-rating="{{ lead.manual_rating or 0 }}" title="{{ 'rated ' ~ lead.manual_rating ~ '/5' if lead.manual_rating else 'click to rate 1-5' }}">
+                                        {% for i in range(1, 6) %}
+                                        <span class="star{% if lead.manual_rating and i <= lead.manual_rating %} filled{% endif %}" data-star="{{ i }}">★</span>
+                                        {% endfor %}
+                                    </div>
+                                </form>
+            {% endmacro %}
+
+            <!-- CONNECTED CARD MACRO — rich: outcome, heat, cost, recording, transcript -->
+            {% macro connected_card(lead) %}
+                        <div class="conn-card" data-heat="{{ lead.heat_score or 'none' }}">
+                            <div class="lead-card-header">
+                                <div class="lead-name">{{ lead.first_name or "Anonymous" }}</div>
+                                <span class="conn-badge conn-yes">connected</span>
+                            </div>
+                            <div class="lead-phone">{{ lead.phone_masked }}</div>
+                            <div class="lead-meta">
+                                <span class="lead-attempts">Att: {{ lead.attempts }}</span>
+                                {% if lead.duration_sec %}<span class="lead-dur">{{ lead.duration_sec }}s</span>{% endif %}
+                                {% if lead.cost is not none %}<span class="lead-cost">₹{{ "%.2f"|format(lead.cost) }}</span>{% endif %}
+                            </div>
+                            {{ rating_block(lead) }}
+                            <div class="conn-actions">
+                                {# A recording only exists when the call actually had talk-time.
+                                   Bolna always returns a recording_url, but it 404s ("Recording
+                                   not found") for no-answer/busy/rejected calls. Gate on
+                                   duration_sec > 0 so we never show a dead link. #}
+                                {% if lead.recording_url and lead.duration_sec and lead.duration_sec > 0 %}
+                                <a class="rec-link" href="{{ lead.recording_url }}" target="_blank" rel="noopener">
+                                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                                    Recording
+                                </a>
+                                {% else %}
+                                <span class="rec-none">no recording</span>
+                                {% endif %}
+                            </div>
+                            {% if lead.transcript %}
+                            <details class="transcript">
+                                <summary>Transcript</summary>
+                                <div class="transcript-body">{{ lead.transcript }}</div>
+                            </details>
+                            {% endif %}
+                        </div>
+            {% endmacro %}
+
+            <!-- NOT-CONNECTED CARD MACRO — compact: status only -->
+            {% macro not_connected_card(lead) %}
+                        <div class="nc-card">
+                            <div class="lead-card-header">
+                                <div class="lead-name">{{ lead.first_name or "Anonymous" }}</div>
+                                {% if lead.connection_status == 'no-answer' %}
+                                <span class="conn-badge conn-noanswer">no answer</span>
+                                {% elif lead.connection_status == 'failed' %}
+                                <span class="conn-badge conn-failed">failed</span>
+                                {% else %}
+                                <span class="conn-badge conn-na">not connected</span>
+                                {% endif %}
+                            </div>
+                            <div class="lead-phone">{{ lead.phone_masked }}</div>
+                            <div class="lead-meta">
+                                <span class="lead-attempts">Att: {{ lead.attempts }}/{{ lead.max_attempts }}</span>
+                                {% if lead.pending_retry %}
+                                <span class="conn-badge conn-retry" title="failed call — queued for another attempt">↻ retry pending</span>
+                                {% elif lead.attempts >= lead.max_attempts %}
+                                <span class="lead-status" title="reached max attempts">max attempts</span>
+                                {% else %}
+                                <span class="lead-status">{{ lead.call_status }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+            {% endmacro %}
+
+            <!-- VERIFIED LEADS SECTION (Layer 4 — the sales-ready gold) -->
+            <section class="conn-section" style="margin-bottom:8px;">
+                <div class="conn-section-head" style="justify-content:space-between;">
+                    <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;">
+                        <h2><span class="column-title-dot" style="width:9px;height:9px;background:var(--color-gold,#D4AF37);"></span> Verified Leads <span class="conn-count" style="color:#D4AF37;">{{ verified_count }}</span></h2>
+                        <span class="conn-sub">qualified &middot; ready for the sales team</span>
+                    </div>
+                    <a href="/export-verified{% if active_campaign_id %}?campaign_id={{ active_campaign_id }}{% endif %}" class="btn btn-primary" style="text-decoration:none;{% if not verified_count %}opacity:.5;pointer-events:none;{% endif %}">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        Export CSV{% if verified_count %} ({{ verified_count }}){% endif %}
+                    </a>
+                </div>
+                {# VERIFIED LEAD CARD — matches the sketch, top to bottom:
+                   header (name + dialable phone) / AI verdict (fire on HOT) /
+                   stars (heat->1-5) / interest badge / 3 captured details / recording. #}
+                {% macro verified_card(v) %}
+                {% set heat = v.heat_score or 'none' %}
+                {% set stars = 5 if heat == 'hot' else (3 if heat == 'warm' else (1 if heat == 'cold' else 0)) %}
+                <div class="vlead-card">
+                    <div class="vlead-head">
+                        <div class="vlead-name">{{ v.first_name or "Anonymous" }}</div>
+                        <a class="vlead-phone" href="tel:{{ v.phone }}">{{ v.phone }}</a>
+                    </div>
+                    <div class="vlead-verdict">
+                        {% if heat == 'hot' %}<span class="verdict-hot">🔥 HOT LEAD</span>
+                        {% elif heat == 'warm' %}<span class="verdict-warm">Warm lead</span>
+                        {% elif heat == 'cold' %}<span class="verdict-cold">Cold lead</span>
+                        {% else %}<span class="verdict-none">Unscored</span>{% endif %}
+                    </div>
+                    <div class="vlead-stars" title="AI heat rating">
+                        {% for i in range(1, 6) %}<span class="vstar{{ ' on' if i <= stars else '' }}">★</span>{% endfor %}
+                    </div>
+                    <div>
+                        {% if v.interested %}<span class="badge-interested">Interested</span>
+                        {% else %}<span class="badge-not">Not Interested</span>{% endif %}
+                    </div>
+                    <div class="vlead-details">
+                        {% if v.branch %}<div class="detail-row"><span>Branch</span><strong>{{ v.branch|capitalize }}</strong></div>{% endif %}
+                        <div class="detail-row"><span>Budget</span><strong>{{ v.budget or "—" }}</strong></div>
+                        <div class="detail-row"><span>Location</span><strong>{{ v.location or "—" }}</strong></div>
+                        <div class="detail-row"><span>Configuration</span><strong>{{ v.configuration or "—" }}</strong></div>
+                        <div class="detail-row"><span>Possession</span><strong>{{ v.possession or "—" }}</strong></div>
+                    </div>
+                    {% if v.recording_url and v.duration_sec and v.duration_sec > 0 %}
+                    <a class="vlead-rec" href="{{ v.recording_url }}" target="_blank" rel="noopener">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        Recording ({{ v.duration_sec }}s)
+                    </a>
+                    {% endif %}
+                </div>
+                {% endmacro %}
+
+                {% if verified_leads %}
+                <div class="vlead-grid">
+                    {% for v in verified_leads %}{{ verified_card(v) }}{% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-column-state" style="height:auto;padding:22px;">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <span>No verified leads yet — a lead is verified when Dhyan captures a requirement (location / budget / config) or marks interest. Needs Bolna extraction variables configured.</span>
+                </div>
+                {% endif %}
+            </section>
+
+            <!-- CONNECTED SECTION -->
+            <section class="conn-section">
+                <div class="conn-section-head">
+                    <h2><span class="dot-verified column-title-dot" style="width:9px;height:9px;"></span> Connected <span class="conn-count">{{ connected }}</span></h2>
+                    <span class="conn-sub">picked up &middot; review recording + transcript</span>
+                </div>
+                {% if connected_leads %}
+                <div class="conn-grid">
+                    {% for lead in connected_leads %}{{ connected_card(lead) }}{% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-column-state" style="height:auto;padding:28px;">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <span>No connected calls yet — upload a CSV and Start Calling.</span>
+                </div>
+                {% endif %}
+            </section>
+
+            <!-- NOT CONNECTED SECTION -->
+            <section class="conn-section">
+                <div class="conn-section-head">
+                    <h2><span class="nc-dot"></span> Not Connected <span class="conn-count nc">{{ not_connected }}</span></h2>
+                    <span class="conn-sub">no-answer / failed{% if retry_pending %} &middot; <span style="color:var(--color-gold,#D4AF37);">↻ {{ retry_pending }} pending retry</span>{% endif %}{% if pending %} &middot; {{ pending }} still in flight{% endif %}</span>
+                </div>
+                {% if not_connected_leads %}
+                <div class="conn-grid nc-grid">
+                    {% for lead in not_connected_leads %}{{ not_connected_card(lead) }}{% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-column-state" style="height:auto;padding:28px;">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <span>Nothing here — no failed or no-answer calls.</span>
+                </div>
+                {% endif %}
+            </section>
+
+            {% if not history_view %}
+            <!-- UPLOAD LEADS MODAL -->
+            <div id="uploadModal" class="modal-wrapper">
+                <div class="modal-card">
+                    <div class="modal-header">
+                        <h3>Upload Leads</h3>
+                        <button class="modal-close-btn" onclick="closeUploadModal()">
+                            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                    </div>
+                    <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label for="campaign_name">Campaign Name</label>
+                            <input type="text" id="campaign_name" name="campaign_name" class="form-input" placeholder="e.g. Meta June 2026" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="consent_source">Consent Basis Source</label>
+                            <input type="text" id="consent_source" name="consent_source" class="form-input" value="whatsapp_enquiry" required>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 28px;">
+                            <label>CSV Data File (any size)</label>
+                            <div id="dropzone" class="file-dropzone" onclick="document.getElementById('csv_file').click()">
+                                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                <div class="file-dropzone-text"><span>Drag and drop</span> your CSV here or click to browse</div>
+                                <div class="file-dropzone-info">Phone + name columns. Cleaned, deduped &amp; DNC-checked on upload.</div>
+                                <input type="file" id="csv_file" name="csv_file" accept=".csv" style="display: none;" onchange="handleFileSelect(this)" required>
+                            </div>
+                            <div id="file-name-display" style="font-size: 12px; color: var(--color-accent-gold); margin-top: 8px; font-weight: 500; display: none;"></div>
+                        </div>
+                        <div style="display: flex; gap: 16px; justify-content: flex-end;">
+                            <button type="button" class="btn btn-secondary" onclick="closeUploadModal()">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Upload &amp; Queue</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- START CALLING CONFIRMATION MODAL (the live dialer gate) -->
+            <div id="startCallingModal" class="modal-wrapper">
+                <div class="modal-card">
+                    <div class="modal-header">
+                        <h3>Start Calling</h3>
+                        <button class="modal-close-btn" onclick="closeStartCallingModal()">
+                            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                    </div>
+
+                    <div class="release-warn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                        These are <strong>REAL outbound calls</strong> placed by Dhyan via Bolna.
+                    </div>
+
+                    {% if bolna_balance_ok and bolna_wallet is not none and low_balance %}
+                    <div class="release-warn" style="background:rgba(212,175,55,.10);border-color:rgba(212,175,55,.35);">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        Bolna balance ₹{{ "{:,.0f}".format(bolna_wallet) }}. The run keeps going until Bolna actually runs out — it then pauses cleanly and the rest stay callable to resume after a top-up.
+                    </div>
+                    {% elif not bolna_balance_ok %}
+                    <div class="release-warn" style="background:rgba(212,175,55,.10);border-color:rgba(212,175,55,.35);">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        Couldn't read your Bolna balance — <strong>check it in the Bolna dashboard</strong> before launching.
+                    </div>
+                    {% endif %}
+
+                    <div class="release-stats">
+                        <div class="release-stat"><span>Campaign</span><strong>{{ campaign_name }}</strong></div>
+                        <div class="release-stat"><span>Leads in this batch</span><strong>{{ calling_count }}</strong></div>
+                        <div class="release-stat"><span>Paced delivery</span><strong>{{ chunk_count_preview }} chunks of {{ chunk_size }}</strong><span class="win-range">~{{ chunk_eta_min }} min total · {{ chunk_delay_sec }}s between chunks</span></div>
+                        <div class="release-stat"><span>Est. cost</span><strong>≈ ₹{{ "{:,.0f}".format(calling_est_cost) }}</strong><span class="win-range">(@ ₹{{ "%.2f"|format(cost_per_call) }}/call)</span></div>
+                        {% if bolna_balance_ok and bolna_wallet is not none %}
+                        <div class="release-stat"><span>Bolna balance</span><strong class="{{ 'win-closed' if low_balance else 'win-open' }}">₹{{ "{:,.0f}".format(bolna_wallet) }}</strong><span class="win-range">{% if low_balance %}(low){% else %}(ok){% endif %}</span></div>
+                        {% else %}
+                        <div class="release-stat"><span>Bolna balance</span><strong>—</strong><span class="win-range">(check Bolna)</span></div>
+                        {% endif %}
+                        <div class="release-stat"><span>Calling window</span>
+                            <strong class="{{ 'win-open' if calling_window_open else 'win-closed' }}">{{ 'OPEN' if calling_window_open else 'CLOSED' }}</strong>
+                            <span class="win-range">({{ calling_window_label }})</span>
+                        </div>
+                    </div>
+
+                    {% if calling_numbers %}
+                    <div class="release-list-label">Numbers that would be called (masked):</div>
+                    <div class="release-list">
+                        {% for n in calling_numbers %}<div class="release-num">{{ n }}</div>{% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="release-empty">No callable leads right now — none queued, all on DNC, or all at max attempts.</div>
+                    {% endif %}
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeStartCallingModal()">Cancel</button>
+                        <form method="post" action="/start-calling" style="display:inline;">
+                            <input type="hidden" name="campaign_id" value="{{ active_campaign_id }}">
+                            <input type="hidden" name="mode" value="dry">
+                            <button type="submit" class="btn btn-secondary">Dry-run preview</button>
+                        </form>
+                        <!-- The modal IS the confirmation gate; clicking this button
+                             submits directly (no extra native pop-up that some
+                             browsers block after repeated dialogs). -->
+                        <form method="post" action="/start-calling" style="display:inline;">
+                            <input type="hidden" name="campaign_id" value="{{ active_campaign_id }}">
+                            <input type="hidden" name="mode" value="live">
+                            <input type="hidden" name="confirm" value="yes">
+                            <button type="submit" class="btn btn-call{% if not (calling_window_open and calling_count) %} btn-inert{% endif %}"{% if not (calling_window_open and calling_count) %} disabled{% endif %}>
+                                Start calling {{ calling_count }} · {{ chunk_count_preview }} chunks (~{{ chunk_eta_min }} min)
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </main>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // Count-up animations
+            document.querySelectorAll(".count-up").forEach(el => {
+                const target = parseInt(el.getAttribute("data-val") || "0", 10);
+                if (target === 0) return;
+                animateValue(el, 0, target, 1200);
+            });
+            document.querySelectorAll(".count-up-decimal").forEach(el => {
+                const target = parseFloat(el.getAttribute("data-val") || "0");
+                if (target === 0) return;
+                animateValueDecimal(el, 0, target, 1200);
+            });
+
+            // Rating system + hottest sort
+            initStars();
+            captureOriginalOrder();
+            if (localStorage.getItem("vb_hottest") === "1") {
+                hottestOn = true;
+                applyHottest(true);
+            }
+
+            {% if not history_view %}
+            // Auto-refresh every 15s so results stream in (paused while a modal is open).
+            // History drill-downs are a finished batch (static) — no polling there.
+            setTimeout(() => {
+                const ids = ["uploadModal", "startCallingModal"];
+                const anyOpen = ids.some(id => {
+                    const m = document.getElementById(id);
+                    return m && m.classList.contains("active");
+                });
+                if (!anyOpen) window.location.reload();
+            }, 15000);
+            {% endif %}
+        });
+
+        // Layer 3: clickable star rating -> POST /rate
+        function initStars() {
+            document.querySelectorAll(".star-form").forEach(form => {
+                const stars = form.querySelectorAll(".star");
+                const preview = n => stars.forEach(s => s.classList.toggle("preview", parseInt(s.dataset.star) <= n));
+                const clearPreview = () => stars.forEach(s => s.classList.remove("preview"));
+                stars.forEach(star => {
+                    star.addEventListener("mouseover", () => preview(parseInt(star.dataset.star)));
+                    star.addEventListener("mouseout", clearPreview);
+                    star.addEventListener("click", () => {
+                        const note = window.prompt("Optional note for this rating (Cancel to skip):") || "";
+                        form.querySelector(".star-input").value = star.dataset.star;
+                        form.querySelector(".note-input").value = note;
+                        form.submit();
+                    });
+                });
+            });
+        }
+
+        // Sort by hottest (client-side reorder, persisted)
+        const HEAT_RANK = { hot: 3, warm: 2, cold: 1, none: 0 };
+        let hottestOn = false;
+
+        function captureOriginalOrder() {
+            document.querySelectorAll(".column-cards-container").forEach(col => {
+                Array.from(col.querySelectorAll(".lead-mini-card"))
+                    .forEach((card, i) => { card.dataset.origIndex = i; });
+            });
+        }
+
+        function applyHottest(on) {
+            document.querySelectorAll(".column-cards-container").forEach(col => {
+                const cards = Array.from(col.querySelectorAll(".lead-mini-card"));
+                if (!cards.length) return;
+                cards.sort((a, b) => on
+                    ? (HEAT_RANK[b.dataset.heat || "none"] - HEAT_RANK[a.dataset.heat || "none"])
+                    : (parseInt(a.dataset.origIndex) - parseInt(b.dataset.origIndex)));
+                cards.forEach(c => col.appendChild(c));
+            });
+            const btn = document.getElementById("sortHottest");
+            if (btn) btn.classList.toggle("active", on);
+        }
+
+        function toggleHottest() {
+            hottestOn = !hottestOn;
+            localStorage.setItem("vb_hottest", hottestOn ? "1" : "0");
+            applyHottest(hottestOn);
+        }
+
+        function animateValue(obj, start, end, duration) {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                obj.innerHTML = Math.floor(progress * (end - start) + start);
+                if (progress < 1) window.requestAnimationFrame(step);
+                else obj.innerHTML = end;
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        function animateValueDecimal(obj, start, end, duration) {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                const currentVal = progress * (end - start) + start;
+                obj.innerHTML = Math.floor(currentVal).toLocaleString('en-IN');
+                if (progress < 1) window.requestAnimationFrame(step);
+                else obj.innerHTML = Math.floor(end).toLocaleString('en-IN');
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        // Upload modal
+        function openUploadModal() { document.getElementById("uploadModal").classList.add("active"); }
+        function closeUploadModal() {
+            document.getElementById("uploadModal").classList.remove("active");
+            document.getElementById("uploadForm").reset();
+            const display = document.getElementById("file-name-display");
+            display.style.display = "none";
+            display.innerHTML = "";
+        }
+
+        // Start Calling modal (live dialer gate)
+        function openStartCallingModal() { document.getElementById("startCallingModal").classList.add("active"); }
+        function closeStartCallingModal() { document.getElementById("startCallingModal").classList.remove("active"); }
+        function confirmStartCalling() {
+            return window.confirm("Place REAL outbound calls now via Bolna? This cannot be undone.");
+        }
+
+        function handleFileSelect(input) {
+            const display = document.getElementById("file-name-display");
+            if (input.files && input.files.length > 0) {
+                display.innerHTML = "Selected: " + input.files[0].name;
+                display.style.display = "block";
+            }
+        }
+
+        // Drag & drop — only wired when the upload modal is present (not in the
+        // read-only History drill-down, where #dropzone doesn't exist).
+        const dropzone = document.getElementById("dropzone");
+        if (dropzone) {
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropzone.addEventListener(eventName, (e) => {
+                    e.preventDefault(); e.stopPropagation();
+                    dropzone.classList.add('dragover');
+                }, false);
+            });
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, (e) => {
+                    e.preventDefault(); e.stopPropagation();
+                    dropzone.classList.remove('dragover');
+                }, false);
+            });
+            dropzone.addEventListener('drop', (e) => {
+                const files = e.dataTransfer.files;
+                const fileInput = document.getElementById("csv_file");
+                if (files.length > 0 && files[0].name.endsWith('.csv')) {
+                    fileInput.files = files;
+                    handleFileSelect(fileInput);
+                } else {
+                    alert("Please drop a valid .csv file.");
+                }
+            }, false);
+        }
+    </script>
+</body>
+</html>
